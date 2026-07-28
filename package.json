@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "sirv dist --port $PORT --host 0.0.0.0 --single"
   },
   "dependencies": {
     "firebase": "^12.16.0",
     "jsbarcode": "^3.12.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "sirv": "^3.0.2",
     "sweetalert2": "^11.26.25"
   },
   "devDependencies": {
