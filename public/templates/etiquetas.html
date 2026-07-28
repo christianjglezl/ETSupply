@@ -213,7 +213,7 @@
       width: var(--label-width);
       height: var(--label-height);
       border: 1px dashed #CCCCCC; /* Guía de corte visual en pantalla */
-      padding: 1.5mm 2.2mm 3.5mm 2.2mm; /* Aumentamos el margen inferior para subir el código de barras */
+      padding: 1.2mm 2.2mm 4.8mm 2.2mm; /* Aumentamos más el margen inferior para levantar el código de barras */
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -522,6 +522,19 @@
         tag.className = 'price-tag';
         tag.style.border = showCutLines ? '1px dashed #CCCCCC' : 'none';
 
+        // Validación y formateo de entrada para EAN-13
+        let displayId = prod.id;
+        if (format === "EAN13") {
+          const numericId = prod.id.replace(/\D/g, "");
+          if (numericId.length < 12) {
+            displayId = numericId.padStart(12, "0");
+          } else if (numericId.length > 13) {
+            displayId = numericId.substring(0, 13);
+          } else {
+            displayId = numericId;
+          }
+        }
+
         // Estructura interior optimizada para rollos pequeños
         tag.innerHTML = `
           <div class="tag-top-row">
@@ -560,7 +573,7 @@
             fontSize = 0; // Ocultar el valor humano si no cabe
           }
 
-          JsBarcode(`#barcode-svg-${idx}`, prod.id, {
+          JsBarcode(`#barcode-svg-${idx}`, displayId, {
             format: format,
             width: barWidth,
             height: barHeight,
