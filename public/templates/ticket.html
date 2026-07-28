@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy Tech Consignaciones - Ticket de Operación</title>
+  <style>
+    /* VARIABLES DE DISEÑO (Paleta Azul Marino Premium de Easy Tech) */
+    :root {
+      --color-primary: #0A192F;      /* Azul Marino Oscuro */
+      --color-primary-light: #172A45;/* Azul Marino Intermedio */
+      --color-accent: #64FFDA;       /* Turquesa / Verde Menta */
+      --color-accent-blue: #3A86FF;  /* Azul Eléctrico */
+      --color-text-dark: #0A192F;
+      --color-text-muted: #607D8B;
+      --color-bg-light: #F4F6F9;
+      --color-white: #FFFFFF;
+      --font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--color-bg-light);
+      font-family: var(--font-family);
+      color: var(--color-text-dark);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* CONTENEDOR DE LA INTERFAZ DE SIMULACIÓN */
+    .simulator-container {
+      display: flex;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    /* PANEL DE CONTROL (IZQUIERDA) */
+    .control-panel {
+      flex: 1;
+      max-width: 500px;
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      max-height: 95vh;
+      overflow-y: auto;
+    }
+
+    .control-panel h2 {
+      font-size: 1.5rem;
+      color: var(--color-accent);
+      border-bottom: 2px solid var(--color-primary-light);
+      padding-bottom: 12px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.85rem;
+      color: #A8B2D1;
+      font-weight: 500;
+    }
+
+    .form-group input, .form-group select {
+      background-color: var(--color-primary-light);
+      border: 1px solid rgba(100, 255, 218, 0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--color-white);
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 8px rgba(100, 255, 218, 0.25);
+    }
+
+    .products-table-editor {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+
+    .products-table-editor th {
+      text-align: left;
+      color: var(--color-accent);
+      padding: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .products-table-editor td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .products-table-editor input[type="number"] {
+      width: 55px;
+      padding: 4px;
+      text-align: center;
+      background-color: var(--color-primary);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      border-radius: 4px;
+    }
+
+    .products-table-editor input:disabled {
+      background-color: #0f1c2e;
+      color: #607D8B;
+      cursor: not-allowed;
+      border-color: transparent;
+    }
+
+    /* BOTONES */
+    .btn {
+      background-color: var(--color-accent-blue);
+      color: var(--color-white);
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background-color: #2563EB;
+      transform: translateY(-2px);
+    }
+
+    .btn-print {
+      background-color: var(--color-accent);
+      color: var(--color-primary);
+    }
+
+    .btn-print:hover {
+      background-color: #52E0C4;
+    }
+
+    /* SIMULADOR DE PAPEL (DERECHA) */
+    .preview-panel {
+      flex: 1.2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 10px;
+      overflow-y: auto;
+      max-height: 95vh;
+    }
+
+    .paper-size-selector {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+      background: var(--color-white);
+      padding: 6px 12px;
+      border-radius: 30px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .size-btn {
+      border: none;
+      background: none;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      transition: all 0.3s ease;
+    }
+
+    .size-btn.active {
+      background-color: var(--color-primary);
+      color: var(--color-white);
+    }
+
+    /* DISEÑO DEL TICKET (SIMULACIÓN DE TÉRMICO) */
+    .ticket-view {
+      background-color: var(--color-white);
+      color: #000000;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      padding: 15mm 8mm;
+      border-radius: 2px;
+      width: 80mm;
+      min-height: 120mm;
+      transition: width 0.3s ease;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .ticket-view.size-58 {
+      width: 58mm;
+      padding: 10mm 4mm;
+      font-size: 9px;
+    }
+
+    /* ELEMENTOS DEL TICKET */
+    .ticket-header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .ticket-logo {
+      font-family: var(--font-family);
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    
+    .ticket-logo span {
+      color: var(--color-accent-blue);
+    }
+
+    .ticket-subtitle {
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      border: 1px solid #000;
+      padding: 2px 4px;
+      display: inline-block;
+    }
+
+    .divider {
+      border-top: 1px dashed #000000;
+      margin: 10px 0;
+    }
+
+    .ticket-info {
+      margin-bottom: 12px;
+      font-size: 11px;
+    }
+    
+    .ticket-view.size-58 .ticket-info {
+      font-size: 9px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .info-label {
+      font-weight: bold;
+    }
+
+    /* TABLA DE PRODUCTOS EN EL TICKET */
+    .ticket-table-row {
+      margin-bottom: 8px;
+    }
+
+    .prod-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      word-wrap: break-word;
+    }
+
+    .prod-calc {
+      display: flex;
+      justify-content: space-between;
+      padding-left: 10px;
+    }
+
+    .prod-stock-info {
+      font-size: 9px;
+      color: #333;
+      padding-left: 10px;
+      font-style: italic;
+    }
+    
+    .ticket-view.size-58 .prod-stock-info {
+      font-size: 8px;
+    }
+
+    .ticket-totals {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .total-large {
+      font-size: 13px;
+      border-top: 1px dashed #000;
+      padding-top: 4px;
+      margin-top: 6px;
+    }
+    
+    .ticket-view.size-58 .total-large {
+      font-size: 10px;
+    }
+
+    .ticket-legal {
+      font-size: 8px;
+      line-height: 1.2;
+      text-align: justify;
+      margin-top: 15px;
+      color: #333;
+    }
+
+    .ticket-footer {
+      text-align: center;
+      margin-top: 25px;
+      font-size: 10px;
+    }
+    
+    .ticket-view.size-58 .ticket-footer {
+      font-size: 8px;
+    }
+
+    .signature-area {
+      margin-top: 35px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .signature-line {
+      border-top: 1px solid #000;
+      width: 70%;
+      margin: 0 auto 5px auto;
+    }
+
+    /* ESTILOS DE IMPRESIÓN EXCLUSIVOS */
+    @media print {
+      body {
+        background-color: #FFFFFF;
+        color: #000000;
+        display: block;
+        min-height: auto;
+      }
+
+      .control-panel, 
+      .paper-size-selector, 
+      .btn,
+      .simulator-container {
+        display: none !important;
+      }
+
+      .ticket-view {
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        background-color: transparent !important;
+      }
+
+      @page {
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="simulator-container">
+    
+    <!-- PANEL DE CONTROL -->
+    <div class="control-panel">
+      <h2>Easy Tech Consignaciones</h2>
+      <p style="font-size: 0.85rem; color: #A8B2D1;">Parámetros del Ticket de Consignación</p>
+      
+      <!-- TIPO DE OPERACIÓN -->
+      <div class="form-group">
+        <label for="input-operacion">Tipo de Operación</label>
+        <select id="input-operacion" onchange="toggleOperationMode(this.value)">
+          <option value="corte" selected>Corte y Cobro (Visita Regular)</option>
+          <option value="surtido">Surtido Inicial / Nueva Tienda</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="input-tienda">Nombre de la Tienda</label>
+        <input type="text" id="input-tienda" value="Abarrotes y Novedades Candy">
+      </div>
+
+      <div class="form-group">
+        <label for="input-encargado">Encargado/Dueño</label>
+        <input type="text" id="input-encargado" value="Sra. Carmen Gómez">
+      </div>
+
+      <div class="form-group">
+        <label for="input-fecha">Fecha de Operación</label>
+        <input type="datetime-local" id="input-fecha">
+      </div>
+
+      <div class="form-group">
+        <label for="input-ticket-num">Folio de Ticket</label>
+        <input type="text" id="input-ticket-num" value="ETC-2026-0042">
+      </div>
+
+      <div class="form-group" id="group-comision">
+        <label for="input-comision">Comisión Tienda (%)</label>
+        <select id="input-comision" onchange="updateTicket()">
+          <option value="0.15">15%</option>
+          <option value="0.20" selected>20% (Por Defecto)</option>
+          <option value="0.25">25%</option>
+          <option value="0.30">30%</option>
+        </select>
+      </div>
+
+      <div>
+        <h3 style="font-size: 1rem; color: var(--color-accent); margin-bottom: 8px;">Conteo de Inventario</h3>
+        <table class="products-table-editor">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th style="text-align: center;" class="col-inicial">Inicial</th>
+              <th style="text-align: center;" class="col-fisico">Físico</th>
+              <th style="text-align: center;" class="col-reab">Surtir</th>
+            </tr>
+          </thead>
+          <tbody id="editor-products-body">
+            <!-- Cargado dinámicamente por JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <button class="btn btn-print" onclick="window.print()">
+        <span>🖨️ Imprimir Documento</span>
+      </button>
+    </div>
+
+    <!-- VISTA PREVIA DEL TICKET (SIMULADOR DE PAPEL) -->
+    <div class="preview-panel">
+      <div class="paper-size-selector">
+        <button class="size-btn active" onclick="setTicketSize(80)">Ancho 80mm</button>
+        <button class="size-btn" onclick="setTicketSize(58)">Ancho 58mm</button>
+      </div>
+
+      <!-- TICKET -->
+      <div class="ticket-view" id="ticket-container">
+        
+        <div class="ticket-header">
+          <div class="ticket-logo">EasyTech<span>Supply</span></div>
+          <div class="ticket-subtitle" id="t-tipo-titulo">CONTROL DE CONSIGNACIÓN</div>
+          <div>Tel: 444-123-4567</div>
+          <div>soporte@easytechsupply.com</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="ticket-info">
+          <div class="info-row"><span class="info-label">FOLIO:</span> <span id="t-folio">ETC-2026-0042</span></div>
+          <div class="info-row"><span class="info-label">FECHA:</span> <span id="t-fecha">27/07/2026 13:30</span></div>
+          <div class="info-row"><span class="info-label">CLIENTE:</span> <span id="t-tienda">Papelería Candy</span></div>
+          <div class="info-row"><span class="info-label">RECIBE:</span> <span id="t-encargado">Sra. Carmen Gómez</span></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- LISTADO DE PRODUCTOS -->
+        <div id="ticket-products-list">
+          <!-- Dinámico -->
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- TOTALES Y COMISIONES -->
+        <div class="ticket-totals" id="ticket-totals-section">
+          <!-- Dinámico según tipo de operación -->
+        </div>
+
+        <!-- TEXTO LEGAL DE RESPONSABILIDAD (Para consignaciones) -->
+        <div class="ticket-legal" id="ticket-legal-text">
+          El cliente declara recibir a entera conformidad la mercancía listada, la cual queda en calidad de consignación propiedad de Easy Tech Supply. El firmante se constituye como depositario de los bienes y asume total responsabilidad por su resguardo, pérdida, robo, daño o destrucción, obligándose a liquidar el valor total en la siguiente visita de ruta.
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- FIRMAS -->
+        <div class="signature-area">
+          <div class="signature-line"></div>
+          <div>Firma Receptor (Tienda)</div>
+        </div>
+
+        <div class="signature-area" style="margin-top: 30px;">
+          <div class="signature-line"></div>
+          <div>Firma Repartidor (Easy Tech)</div>
+        </div>
+
+        <div class="ticket-footer">
+          <p>¡Gracias por su confianza!</p>
+          <p>Easy Tech Supply - Conectando tu negocio</p>
+          <p style="margin-top: 5px; font-size: 8px;">Este documento certifica el inventario bajo custodia del punto de venta.</p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // DATOS DE PRUEBA
+    const mockProducts = [
+      { id: "prod_cable_c", nombre: "Cable USB Tipo C Reforzado 1m", precio: 80.00, inicial: 15, fisico: 10, reab: 10 },
+      { id: "prod_cable_lightning", nombre: "Cable USB a Lightning 1m", precio: 90.00, inicial: 12, fisico: 8, reab: 10 },
+      { id: "prod_cargador_rapido", nombre: "Cargador Carga Rápida 20W", precio: 150.00, inicial: 8, fisico: 5, reab: 5 },
+      { id: "prod_adaptador_jack", nombre: "Adaptador Tipo C a Jack 3.5mm", precio: 70.00, inicial: 6, fisico: 6, reab: 0 }
+    ];
+
+    // Mantenemos una copia de los valores iniciales y físicos para restaurarlos cuando se cambie de modo
+    const backupProducts = JSON.parse(JSON.stringify(mockProducts));
+
+    let currentMode = "corte"; // "corte" o "surtido"
+
+    // ESTABLECER FECHA POR DEFECTO
+    document.getElementById('input-fecha').value = new Date().toISOString().slice(0, 16);
+
+    // FUNCIÓN PARA CAMBIAR DE MODO
+    function toggleOperationMode(mode) {
+      currentMode = mode;
+      
+      const comisionGroup = document.getElementById('group-comision');
+      const labelReabHeader = document.querySelector('.col-reab');
+      const legalText = document.getElementById('ticket-legal-text');
+
+      if (mode === "surtido") {
+        // En Surtido Inicial no hay inventario previo, por tanto Inicial = 0, Físico = 0
+        mockProducts.forEach(prod => {
+          prod.inicial = 0;
+          prod.fisico = 0;
+        });
+
+        // Ocultar comisión de tienda del panel (no hay cobro en surtido)
+        comisionGroup.style.display = 'none';
+        labelReabHeader.textContent = "Surtir";
+        
+        // Cambiar título legal
+        legalText.style.display = "block"; // Asegurar contrato visible
+      } else {
+        // Restaurar valores guardados de la simulación regular
+        mockProducts.forEach((prod, index) => {
+          prod.inicial = backupProducts[index].inicial;
+          prod.fisico = backupProducts[index].fisico;
+        });
+
+        comisionGroup.style.display = 'flex';
+        labelReabHeader.textContent = "Reab.";
+      }
+
+      renderEditor();
+      updateTicket();
+    }
+
+    // FUNCIÓN PARA RENDERIZAR LA INTERFAZ
+    function init() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("source") === "app") {
+        // Modo impresión directa desde la app
+        // Ocultar controles en pantalla
+        document.querySelector('.control-panel').style.display = 'none';
+        document.querySelector('.paper-size-selector').style.display = 'none';
+        
+        // Ajustar estilos del simulador para centrar el ticket en la pantalla del celular
+        const container = document.querySelector('.simulator-container');
+        container.style.padding = '0';
+        container.style.justifyContent = 'center';
+        container.style.maxWidth = '100%';
+        
+        const previewPanel = document.querySelector('.preview-panel');
+        previewPanel.style.padding = '0';
+        previewPanel.style.background = 'none';
+
+        const storedData = localStorage.getItem("print_ticket_data");
+        if (storedData) {
+          const data = JSON.parse(storedData);
+          currentMode = data.tipoOperacion;
+          
+          // Escribir cabeceras en ticket
+          document.getElementById('t-folio').textContent = data.folio;
+          
+          const dateObj = new Date(data.fecha);
+          const fechaFormatted = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          document.getElementById('t-fecha').textContent = fechaFormatted;
+          
+          document.getElementById('t-tienda').textContent = data.tienda;
+          document.getElementById('t-encargado').textContent = data.encargado;
+          
+          // Título del ticket
+          const tTitulo = document.getElementById('t-tipo-titulo');
+          tTitulo.textContent = currentMode === "surtido" ? "NOTA DE SURTIDO / NUEVO CLIENTE" : "TICKET DE CORTE Y COBRO";
+
+          // Ocultar el texto legal de consigna si es corte y cobro de visita regular
+          const legalText = document.getElementById('ticket-legal-text');
+          legalText.style.display = currentMode === "surtido" ? "block" : "none";
+
+          // Desglose de productos en ticket
+          const listContainer = document.getElementById('ticket-products-list');
+          listContainer.innerHTML = '';
+
+          let totalPcsVendidas = 0;
+          let totalPcsEntregadas = 0;
+          let totalMontoVendido = 0;
+          let totalValorInventarioDejado = 0;
+
+          data.productos.forEach(prod => {
+            const subtotalVenta = prod.vendido * prod.precio;
+            const valorDejado = prod.dejado * prod.precio;
+
+            if (currentMode === "surtido") {
+              totalPcsEntregadas += prod.reab;
+              totalValorInventarioDejado += valorDejado;
+
+              const prodEl = document.createElement('div');
+              prodEl.className = 'ticket-table-row';
+              prodEl.innerHTML = `
+                <div class="prod-title">${prod.nombre}</div>
+                <div class="prod-calc">
+                  <span>Entregado: ${prod.reab} pzas</span>
+                  <span>$${valorDejado.toFixed(2)}</span>
+                </div>
+                <div class="prod-stock-info">
+                  [Precio Público Sugerido: $${prod.precio.toFixed(2)}]
+                </div>
+              `;
+              listContainer.appendChild(prodEl);
+            } else {
+              totalPcsVendidas += prod.vendido;
+              totalMontoVendido += subtotalVenta;
+              totalValorInventarioDejado += valorDejado;
+
+              const prodEl = document.createElement('div');
+              prodEl.className = 'ticket-table-row';
+              prodEl.innerHTML = `
+                <div class="prod-title">${prod.nombre}</div>
+                <div class="prod-calc">
+                  <span>${prod.vendido} vend. / +${prod.reab} surt.</span>
+                  <span>$${subtotalVenta.toFixed(2)}</span>
+                </div>
+                <div class="prod-stock-info">
+                  [Inicial: ${prod.inicial} | Físico: ${prod.fisico} | Surtido: +${prod.reab} | Queda: ${prod.dejado}]
+                </div>
+              `;
+              listContainer.appendChild(prodEl);
+            }
+          });
+
+          // Pintar Totales
+          const totalsContainer = document.getElementById('ticket-totals-section');
+          totalsContainer.innerHTML = '';
+
+          if (currentMode === "surtido") {
+            totalsContainer.innerHTML = `
+              <div class="total-row">
+                <span>PIEZAS ENTREGADAS:</span>
+                <span>${totalPcsEntregadas}</span>
+              </div>
+              <div class="total-row total-large">
+                <span>VALOR EN CONSIGNACIÓN:</span>
+                <span>$${totalValorInventarioDejado.toFixed(2)}</span>
+              </div>
+            `;
+          } else {
+            const comisionPct = data.comisionPct || 20;
+            const totalComisionVal = (data.totales && data.totales.totalComision !== undefined) 
+              ? data.totales.totalComision 
+              : (totalMontoVendido * (comisionPct / 100));
+            const totalCobrarVal = (data.totales && data.totales.totalCobrar !== undefined) 
+              ? data.totales.totalCobrar 
+              : (totalMontoVendido - totalComisionVal);
+
+            totalsContainer.innerHTML = `
+              <div class="total-row">
+                <span>PIEZAS VENDIDAS:</span>
+                <span>${totalPcsVendidas}</span>
+              </div>
+              <div class="total-row">
+                <span>VENTA BRUTA:</span>
+                <span>$${totalMontoVendido.toFixed(2)}</span>
+              </div>
+              <div class="total-row">
+                <span>COMISIÓN TIENDA (${comisionPct}%):</span>
+                <span>-$${totalComisionVal.toFixed(2)}</span>
+              </div>
+              <div class="total-row total-large">
+                <span>TOTAL NETO A COBRAR:</span>
+                <span>$${totalCobrarVal.toFixed(2)}</span>
+              </div>
+              <div class="total-row" style="font-size: 9px; font-weight: normal; margin-top: 5px; color: #444;">
+                <span>VALOR INVENTARIO RESTANTE:</span>
+                <span>$${totalValorInventarioDejado.toFixed(2)}</span>
+              </div>
+            `;
+          }
+
+          // Lanzar la impresión nativa automáticamente
+          setTimeout(() => {
+            window.print();
+          }, 500);
+        }
+      } else {
+        // Modo simulador normal
+        renderEditor();
+        updateTicket();
+        
+        // Listeners de cambios
+        document.getElementById('input-tienda').addEventListener('input', updateTicket);
+        document.getElementById('input-encargado').addEventListener('input', updateTicket);
+        document.getElementById('input-fecha').addEventListener('input', updateTicket);
+        document.getElementById('input-ticket-num').addEventListener('input', updateTicket);
+      }
+    }
+
+    function renderEditor() {
+      const tbody = document.getElementById('editor-products-body');
+      tbody.innerHTML = '';
+
+      mockProducts.forEach((prod, index) => {
+        const tr = document.createElement('tr');
+        
+        // Deshabilitar columnas de inicial y físico en modo surtido
+        const isDisabled = currentMode === "surtido" ? "disabled" : "";
+
+        tr.innerHTML = `
+          <td>${prod.nombre.substring(0, 20)}...</td>
+          <td style="text-align: center;" class="col-inicial">
+            <input type="number" value="${prod.inicial}" min="0" ${isDisabled} onchange="updateProductData(${index}, 'inicial', this.value)">
+          </td>
+          <td style="text-align: center;" class="col-fisico">
+            <input type="number" value="${prod.fisico}" min="0" ${isDisabled} onchange="updateProductData(${index}, 'fisico', this.value)">
+          </td>
+          <td style="text-align: center;">
+            <input type="number" value="${prod.reab}" min="0" onchange="updateProductData(${index}, 'reab', this.value)">
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateProductData(index, field, value) {
+      const parsedVal = parseInt(value) || 0;
+      mockProducts[index][field] = parsedVal;
+      
+      // Guardar en el backup si estamos en modo corte para no perder la edición
+      if (currentMode === "corte") {
+        backupProducts[index][field] = parsedVal;
+      }
+      
+      updateTicket();
+    }
+
+    function updateTicket() {
+      // Tomar valores de entrada
+      const tienda = document.getElementById('input-tienda').value;
+      const encargado = document.getElementById('input-encargado').value;
+      const fechaVal = document.getElementById('input-fecha').value;
+      const folio = document.getElementById('input-ticket-num').value;
+      const comisionPct = parseFloat(document.getElementById('input-comision').value);
+
+      // Formatear Fecha
+      let fechaFormatted = "";
+      if (fechaVal) {
+        const dateObj = new Date(fechaVal);
+        fechaFormatted = dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      }
+
+      // Escribir cabeceras en ticket
+      document.getElementById('t-folio').textContent = folio;
+      document.getElementById('t-fecha').textContent = fechaFormatted;
+      document.getElementById('t-tienda').textContent = tienda;
+      document.getElementById('t-encargado').textContent = encargado;
+
+      // Actualizar Título
+      const tTitulo = document.getElementById('t-tipo-titulo');
+      if (currentMode === "surtido") {
+        tTitulo.textContent = "NOTA DE SURTIDO / NUEVO CLIENTE";
+      } else {
+        tTitulo.textContent = "TICKET DE CORTE Y COBRO";
+      }
+
+      // Renderizar listado de productos y calcular totales
+      const listContainer = document.getElementById('ticket-products-list');
+      listContainer.innerHTML = '';
+
+      let totalPcsVendidas = 0;
+      let totalPcsEntregadas = 0;
+      let totalMontoVendido = 0;
+      let totalValorInventarioDejado = 0;
+
+      mockProducts.forEach(prod => {
+        const vendido = Math.max(0, prod.inicial - prod.fisico);
+        const subtotalVenta = vendido * prod.precio;
+        
+        // Nuevo dejado en el exhibidor: lo físico + lo que se surte/reabastece
+        const nuevoDejado = prod.fisico + prod.reab;
+        const valorDejado = nuevoDejado * prod.precio;
+
+        if (currentMode === "surtido") {
+          // Modo Surtido Inicial
+          if (prod.reab > 0) {
+            totalPcsEntregadas += prod.reab;
+            totalValorInventarioDejado += valorDejado;
+
+            const prodEl = document.createElement('div');
+            prodEl.className = 'ticket-table-row';
+            prodEl.innerHTML = `
+              <div class="prod-title">${prod.nombre}</div>
+              <div class="prod-calc">
+                <span>Entregado: ${prod.reab} pzas</span>
+                <span>$${valorDejado.toFixed(2)}</span>
+              </div>
+              <div class="prod-stock-info">
+                [Precio Sugerido Al Público: $${prod.precio.toFixed(2)}]
+              </div>
+            `;
+            listContainer.appendChild(prodEl);
+          }
+        } else {
+          // Modo Corte Regular
+          if (vendido > 0 || prod.reab > 0 || prod.inicial > 0) {
+            totalPcsVendidas += vendido;
+            totalMontoVendido += subtotalVenta;
+            totalValorInventarioDejado += valorDejado;
+
+            const prodEl = document.createElement('div');
+            prodEl.className = 'ticket-table-row';
+            prodEl.innerHTML = `
+              <div class="prod-title">${prod.nombre}</div>
+              <div class="prod-calc">
+                <span>${vendido} vend. / +${prod.reab} surt.</span>
+                <span>$${subtotalVenta.toFixed(2)}</span>
+              </div>
+              <div class="prod-stock-info">
+                [Inicial: ${prod.inicial} | Físico: ${prod.fisico} | Surtido: +${prod.reab} | Queda: ${nuevoDejado}]
+              </div>
+            `;
+            listContainer.appendChild(prodEl);
+          }
+        }
+      });
+
+      // RENDER DE TOTALES SEGÚN MODO
+      const totalsContainer = document.getElementById('ticket-totals-section');
+      totalsContainer.innerHTML = '';
+
+      if (currentMode === "surtido") {
+        // En Surtido Inicial, cobro es $0, pero mostramos el valor total recibido a resguardo
+        totalsContainer.innerHTML = `
+          <div class="total-row">
+            <span>PIEZAS ENTREGADAS:</span>
+            <span>${totalPcsEntregadas}</span>
+          </div>
+          <div class="total-row total-large">
+            <span>VALOR EN CONSIGNACIÓN:</span>
+            <span>$${totalValorInventarioDejado.toFixed(2)}</span>
+          </div>
+          <div class="total-row" style="font-size: 9px; font-weight: normal; margin-top: 5px;">
+            <span>* Mercancía sujeta a contrato. Cobro en próxima visita.</span>
+          </div>
+        `;
+      } else {
+        // En Corte regular, calculamos cobros y comisiones
+        const totalComision = totalMontoVendido * comisionPct;
+        const totalCobrar = totalMontoVendido - totalComision;
+
+        totalsContainer.innerHTML = `
+          <div class="total-row">
+            <span>PIEZAS VENDIDAS:</span>
+            <span>${totalPcsVendidas}</span>
+          </div>
+          <div class="total-row">
+            <span>VENTA BRUTA:</span>
+            <span>$${totalMontoVendido.toFixed(2)}</span>
+          </div>
+          <div class="total-row">
+            <span>COMISIÓN TIENDA (${Math.round(comisionPct * 100)}%):</span>
+            <span>-$${totalComision.toFixed(2)}</span>
+          </div>
+          <div class="total-row total-large">
+            <span>TOTAL NETO A COBRAR:</span>
+            <span>$${totalCobrar.toFixed(2)}</span>
+          </div>
+          <div class="total-row" style="font-size: 9px; font-weight: normal; margin-top: 5px; color: #444;">
+            <span>VALOR INVENTARIO RESTANTE:</span>
+            <span>$${totalValorInventarioDejado.toFixed(2)}</span>
+          </div>
+        `;
+      }
+    }
+
+    // CONTROL DE TAMAÑO DE SIMULACIÓN (58mm vs 80mm)
+    function setTicketSize(size) {
+      const container = document.getElementById('ticket-container');
+      const buttons = document.querySelectorAll('.size-btn');
+      
+      buttons.forEach(btn => btn.classList.remove('active'));
+      
+      const targetBtn = Array.from(buttons).find(btn => btn.textContent.includes(size + 'mm'));
+      if (targetBtn) targetBtn.classList.add('active');
+
+      if (size === 58) {
+        container.classList.add('size-58');
+      } else {
+        container.classList.remove('size-58');
+      }
+    }
+
+    // Inicializar
+    init();
+  </script>
+</body>
+</html>

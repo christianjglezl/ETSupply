@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminación de Contrato - Easy Tech Supply</title>
+  <style>
+    :root {
+      --color-primary: #0A192F;
+      --color-text: #2D3748;
+      --color-border: #E2E8F0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: var(--color-text);
+      line-height: 1.6;
+      font-size: 11pt;
+      background-color: #F7FAFC;
+      padding: 40px;
+    }
+
+    .contract-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      padding: 50px 60px;
+      border: 1px solid var(--color-border);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--color-primary);
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+
+    .logo-container img {
+      height: 60px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .company-title {
+      text-align: right;
+    }
+
+    .company-title h1 {
+      font-size: 18pt;
+      font-weight: 800;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .company-title p {
+      font-size: 9pt;
+      color: #718096;
+      margin-top: 2px;
+    }
+
+    .document-title {
+      text-align: center;
+      font-size: 13pt;
+      font-weight: bold;
+      margin-bottom: 25px;
+      color: var(--color-primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 10px;
+    }
+
+    .preamble {
+      text-align: justify;
+      margin-bottom: 25px;
+      font-size: 10.5pt;
+    }
+
+    .section-title {
+      font-size: 11pt;
+      font-weight: bold;
+      color: var(--color-primary);
+      margin: 20px 0 10px 0;
+      text-transform: uppercase;
+      border-bottom: 1px dashed var(--color-border);
+      padding-bottom: 4px;
+    }
+
+    .clause {
+      margin-bottom: 18px;
+      text-align: justify;
+    }
+
+    .clause-num {
+      font-weight: bold;
+      color: var(--color-primary);
+    }
+
+    .highlight-box {
+      background-color: #F7FAFC;
+      border-left: 4px solid var(--color-primary);
+      padding: 15px;
+      margin: 20px 0;
+      font-size: 10pt;
+      text-align: justify;
+    }
+
+    /* TABLA DE PRODUCTOS RETORNADOS */
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 10pt;
+    }
+
+    .products-table th, .products-table td {
+      border: 1px solid #CBD5E0;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    .products-table th {
+      background-color: #F7FAFC;
+      color: var(--color-primary);
+      font-weight: bold;
+    }
+
+    .products-table td.qty-cell {
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .signature-section {
+      margin-top: 50px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      page-break-inside: avoid;
+    }
+
+    .signature-box {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .signature-line {
+      width: 80%;
+      border-bottom: 1px solid #718096;
+      margin-bottom: 10px;
+      height: 60px;
+    }
+
+    .signature-box p {
+      font-size: 9.5pt;
+      font-weight: bold;
+    }
+
+    .signature-box span {
+      font-size: 8.5pt;
+      color: #718096;
+    }
+
+    .control-panel {
+      max-width: 800px;
+      margin: 20px auto 0 auto;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      font-size: 10pt;
+      font-weight: bold;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background-color: #172A45;
+    }
+
+    .btn-secondary {
+      background-color: #E2E8F0;
+      color: #4A5568;
+    }
+
+    .btn-secondary:hover {
+      background-color: #CBD5E0;
+    }
+
+    /* FORMATO DE IMPRESIÓN */
+    @media print {
+      body {
+        background-color: #FFFFFF;
+        padding: 0;
+        margin: 12mm 15mm; /* Margen físico para el contenido dentro de la hoja */
+        color: #000000;
+        font-size: 8.5pt;
+        line-height: 1.3;
+      }
+
+      .contract-container {
+        border: none;
+        box-shadow: none;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100%;
+      }
+
+      .control-panel {
+        display: none !important;
+      }
+
+      .header-section {
+        margin-bottom: 12px;
+        padding-bottom: 6px;
+      }
+
+      .logo-container img {
+        height: 40px;
+      }
+
+      .company-title h1 {
+        font-size: 13pt;
+      }
+
+      .document-title {
+        margin-bottom: 12px;
+        font-size: 10.5pt;
+        padding-bottom: 5px;
+      }
+
+      .section-title {
+        margin: 8px 0 4px 0;
+        font-size: 9pt;
+      }
+
+      .preamble, .clause {
+        margin-bottom: 6px;
+        font-size: 8.5pt;
+      }
+
+      .products-table {
+        margin: 10px 0;
+        font-size: 8pt;
+      }
+
+      .products-table th, .products-table td {
+        padding: 4px 8px;
+      }
+
+      .highlight-box {
+        margin: 8px 0;
+        padding: 6px 10px;
+        font-size: 8pt;
+      }
+
+      .signature-section {
+        margin-top: 25px;
+        gap: 20px;
+      }
+
+      .signature-line {
+        height: 30px;
+      }
+
+      @page {
+        size: letter;
+        margin: 0; /* Oculta el encabezado y pie de página por defecto del navegador (URLs, fecha, etc.) */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contract-container">
+    
+    <!-- ENCABEZADO -->
+    <div class="header-section">
+      <div class="logo-container">
+        <img src="/logoEasyBlue.png" alt="Easy Tech Supply" onerror="this.src='https://via.placeholder.com/150x60?text=Easy+Tech'"/>
+      </div>
+      <div class="company-title">
+        <h1>Easy Tech Supply</h1>
+        <p>Distribución Mayorista de Accesorios para Celular</p>
+      </div>
+    </div>
+
+    <!-- TÍTULO DEL DOCUMENTO -->
+    <div class="document-title">
+      Acta de Entrega-Recepción por Término de Consignación
+    </div>
+
+    <!-- PREÁMBULO -->
+    <div class="preamble">
+      Con fecha de <strong><span id="c-fecha">27 de Julio de 2026</span></strong>, se hace constar la conclusión de la relación mercantil comercial entre <strong>EASY TECH SUPPLY</strong>, representada por su representante legal <strong>Christian Josue González Lozano</strong>, y el comercio denominado <strong><span id="c-tienda">Abarrotes Candy</span></strong>, representado por <strong><span id="c-encargado">Sra. Carmen Gómez</span></strong>, ubicado en <strong><span id="c-direccion">Av. Principal #123, Col. Centro</span></strong>, al tenor de los siguientes acuerdos de conformidad:
+    </div>
+
+    <!-- DECLARACIONES DE DEVOLUCIÓN -->
+    <div class="section-title">Acuerdos de Entrega-Recepción</div>
+    
+    <div class="clause">
+      <span class="clause-num">Primero (Devolución del Exhibidor):</span> EL CONSIGNATARIO hace entrega física en este acto a EL CONSIGNANTE del <strong>exhibidor (ganchera/mostrador)</strong> que le fuera otorgado en calidad de comodato gratuito para la venta de accesorios. EL CONSIGNANTE recibe dicho exhibidor a su entera satisfacción, quedando EL CONSIGNATARIO **completamente liberado** de la responsiva civil y del cobro de $300.00 MXN estipulado en el contrato original.
+    </div>
+
+    <div class="clause">
+      <span class="clause-num">Segundo (Devolución de Mercancía Restante):</span> Asimismo, EL CONSIGNATARIO hace devolución física del inventario de mercancía en consignación que no fue vendido al público. Ambos firmantes manifiestan estar de acuerdo con las cantidades de productos descritas a continuación:
+    </div>
+
+    <!-- TABLA DINÁMICA DE PRODUCTOS DEVUELTOS -->
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th style="width: 25%">Código / SKU</th>
+          <th style="width: 55%">Descripción del Producto</th>
+          <th style="width: 20%; text-align: center;">Cant. Retornada</th>
+        </tr>
+      </thead>
+      <tbody id="returned-products-list">
+        <!-- Rellenado dinámicamente con JS -->
+        <tr>
+          <td colspan="3" style="text-align: center; color: #718096; padding: 15px;">
+            No hay productos restantes registrados en la tienda.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box">
+      <strong>Finiquito de Responsabilidad:</strong> Con la firma del presente documento, ambas partes manifiestan que no queda ningún saldo pendiente de pago por concepto de consignaciones anteriores, quedando liberadas recíprocamente de cualquier obligación o reclamación civil, mercantil o de cualquier otra índole legal derivada de su relación previa.
+    </div>
+
+    <!-- SECCIÓN DE FIRMAS -->
+    <div class="signature-section">
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <p>Christian Josue González Lozano</p>
+        <span>EASY TECH SUPPLY</span>
+      </div>
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <p><span id="c-firma-tienda">Abarrotes Candy</span></p>
+        <span>EL CONSIGNATARIO</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PANEL DE CONTROLES EN PANTALLA -->
+  <div class="control-panel">
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir Acta</button>
+    <button class="btn btn-secondary" onclick="window.close()">Cerrar Ventana</button>
+  </div>
+
+  <script>
+    // Recuperar datos de localStorage
+    const storedData = localStorage.getItem("print_fin_contrato_data");
+    if (storedData) {
+      const data = JSON.parse(storedData);
+      
+      document.getElementById('c-fecha').textContent = data.fecha;
+      document.getElementById('c-tienda').textContent = data.tienda;
+      document.getElementById('c-encargado').textContent = data.encargado;
+      document.getElementById('c-direccion').textContent = data.direccion;
+      document.getElementById('c-firma-tienda').textContent = data.tienda + " (" + data.encargado + ")";
+      
+      // Llenar tabla de productos
+      const listContainer = document.getElementById('returned-products-list');
+      if (data.productos && data.productos.length > 0) {
+        listContainer.innerHTML = '';
+        data.productos.forEach(prod => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><code>${prod.id}</code></td>
+            <td><strong>${prod.nombre}</strong><br><span style="font-size: 8.5pt; color: #718096;">${prod.categoria}</span></td>
+            <td class="qty-cell">${prod.cantidad} pzas</td>
+          `;
+          listContainer.appendChild(row);
+        });
+      }
+
+      // Cambiar título de pestaña
+      document.title = "Fin Contrato - " + data.tienda;
+    }
+
+    // Auto-imprimir si viene con parámetro de la aplicación (?source=app)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("source") === "app") {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+  </script>
+</body>
+</html>
