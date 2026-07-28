@@ -541,9 +541,11 @@
             <div class="tag-brand">EasyTech<span>Supply</span></div>
             <div class="tag-price" style="font-size: ${heightMm < 20 ? '12px' : '15px'}">${prod.precio.toFixed(0)}</div>
           </div>
-          <div class="tag-product-name" style="font-size: ${heightMm < 20 ? '7.5px' : '9px'}">${prod.nombre}</div>
-          <div class="tag-barcode-container" style="height: ${heightMm * 0.4}mm;">
-            <svg class="tag-barcode-svg" id="barcode-svg-${idx}"></svg>
+          <div class="tag-barcode-wrapper" style="display: flex; flex-direction: column; width: 100%;">
+            <div class="tag-product-name" style="font-size: ${heightMm < 20 ? '7.5px' : '9px'}; margin-bottom: 0.5mm;">${prod.nombre}</div>
+            <div class="tag-barcode-container" style="height: ${heightMm * 0.4}mm;">
+              <svg class="tag-barcode-svg" id="barcode-svg-${idx}"></svg>
+            </div>
           </div>
         `;
 
