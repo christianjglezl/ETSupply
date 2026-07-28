@@ -8,9 +8,10 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "start": "sirv dist --port $PORT --host 0.0.0.0 --single"
+    "start": "node server.js"
   },
   "dependencies": {
+    "express": "^5.2.1",
     "firebase": "^12.16.0",
     "jsbarcode": "^3.12.3",
     "react": "^19.2.7",
