@@ -277,7 +277,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .tag-barcode-svg {
@@ -529,7 +529,7 @@
             <div class="tag-price" style="font-size: ${heightMm < 20 ? '12px' : '15px'}">${prod.precio.toFixed(0)}</div>
           </div>
           <div class="tag-product-name" style="font-size: ${heightMm < 20 ? '7.5px' : '9px'}">${prod.nombre}</div>
-          <div class="tag-barcode-container" style="height: ${heightMm * 0.35}mm;">
+          <div class="tag-barcode-container" style="height: ${heightMm * 0.4}mm;">
             <svg class="tag-barcode-svg" id="barcode-svg-${idx}"></svg>
           </div>
         `;
@@ -539,7 +539,7 @@
         // Configuración de JsBarcode
         try {
           let barWidth = 1.1;
-          let barHeight = 22;
+          let barHeight = 18;
           let fontSize = 7;
 
           // Escalado para ajustar exactamente al ancho de 2" (50.8mm) o menor
@@ -551,7 +551,7 @@
             fontSize = 6.5;
           } else {
             barWidth = 1.25;
-            barHeight = 25;
+            barHeight = 20;
             fontSize = 7.5;
           }
 
