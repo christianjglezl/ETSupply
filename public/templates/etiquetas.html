@@ -522,17 +522,22 @@
         tag.className = 'price-tag';
         tag.style.border = showCutLines ? '1px dashed #CCCCCC' : 'none';
 
-        // Validación y formateo de entrada para EAN-13
+        // Validación y formateo de entrada para EAN-13 (Cálculo del dígito de control)
         let displayId = prod.id;
         if (format === "EAN13") {
-          const numericId = prod.id.replace(/\D/g, "");
-          if (numericId.length < 12) {
-            displayId = numericId.padStart(12, "0");
-          } else if (numericId.length > 13) {
-            displayId = numericId.substring(0, 13);
+          let clean = prod.id.replace(/\D/g, "");
+          if (clean.length < 12) {
+            clean = clean.padStart(12, "0");
           } else {
-            displayId = numericId;
+            clean = clean.substring(0, 12);
           }
+          let sum = 0;
+          for (let i = 0; i < 12; i++) {
+            let digit = parseInt(clean.charAt(i), 10);
+            sum += (i % 2 === 0) ? digit : digit * 3;
+          }
+          let checkDigit = (10 - (sum % 10)) % 10;
+          displayId = clean + checkDigit;
         }
 
         // Estructura interior optimizada para rollos pequeños
