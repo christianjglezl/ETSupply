@@ -181,12 +181,6 @@ export default function Visitas() {
       nuevoInventarioMap[item.productoId] = item.cantidadDejada;
     });
 
-    // Abrir una pestaña en blanco inmediatamente de forma síncrona para evitar el bloqueo de popups del navegador
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write("<html><head><title>Generando Ticket...</title><style>body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #0A192F; color: #FFFFFF; }</style></head><body><div style='text-align: center;'><h2>EasyTech Supply</h2><p>Guardando registro y preparando ticket de impresión...</p></div></body></html>");
-    }
-
     try {
       // Registrar Visita en Firestore
       await addDoc(collection(db, "visitas"), visitaDoc);
@@ -204,13 +198,15 @@ export default function Visitas() {
         fecha: new Date().toISOString(),
         tienda: tienda.nombre,
         encargado: tienda.encargado || "Responsable",
+        telefono: tienda.telefono || "",
         tipoOperacion: tipoOperacion,
         comisionPct: totals.totalMontoVendido > 0 ? Math.round((totals.totalComision / totals.totalMontoVendido) * 100) : comisionPct,
         totales: {
           totalMontoVendido: totals.totalMontoVendido,
           totalComision: totals.totalComision,
           totalCobrar: totals.totalCobrar,
-          totalPiezas: totals.totalPcsVendidas
+          totalPiezas: totals.totalPcsVendidas,
+          totalValorInventarioDejado: totals.totalValorInventarioDejado
         },
         productos: totals.itemsCorte.map(item => ({
           nombre: item.nombre,
@@ -232,7 +228,7 @@ export default function Visitas() {
         icon: "success",
         showDenyButton: true,
         showCancelButton: true,
-        confirmButtonText: "🖨️ Imprimir Ticket",
+        confirmButtonText: "🖨️ Ver / Imprimir Ticket",
         denyButtonText: "💬 Enviar por WhatsApp",
         cancelButtonText: "Cerrar",
         confirmButtonColor: "#3A86FF",
@@ -241,56 +237,28 @@ export default function Visitas() {
       });
 
       if (actionResult.isConfirmed) {
-        // Redirigir la pestaña previamente abierta a la plantilla estática
-        if (printWindow) {
-          printWindow.location.href = "/templates/ticket.html?source=app";
-        } else {
-          window.open("/templates/ticket.html?source=app", "_blank");
-        }
+        window.open("/templates/ticket.html?source=app", "_blank");
       } else if (actionResult.isDenied) {
-        // Cerrar pestaña temporal de impresión
-        if (printWindow) {
-          printWindow.close();
-        }
-
-        // Construir mensaje legible para WhatsApp
-        let message = `*EasyTech Supply* 🛒\n`;
-        message += `*${tipoOperacion === "surtido" ? "NOTA DE SURTIDO / NUEVO CLIENTE" : "TICKET DE CORTE Y COBRO"}*\n\n`;
-        message += `*Folio:* ${ticketData.folio}\n`;
-        message += `*Fecha:* ${new Date(ticketData.fecha).toLocaleDateString("es-MX")} ${new Date(ticketData.fecha).toLocaleTimeString("es-MX", {hour: '2-digit', minute:'2-digit'})}\n`;
-        message += `*Tienda:* ${ticketData.tienda}\n`;
-        message += `*Encargado:* ${ticketData.encargado}\n\n`;
-        
-        message += `*Detalle de Productos:*\n`;
-        ticketData.productos.forEach(prod => {
-          if (tipoOperacion === "surtido") {
-            if (prod.reab > 0) {
-              message += `- *${prod.nombre}*:\n  Surtido: *+${prod.reab}* pzas (Queda en exhibidor: ${prod.dejado})\n`;
-            }
-          } else {
-            if (prod.vendido > 0 || prod.reab > 0 || prod.inicial > 0) {
-              message += `- *${prod.nombre}*:\n  Inicial: ${prod.inicial} | Físico: ${prod.fisico} | Surtido: +${prod.reab} | Queda: *${prod.dejado}* | Vendido: *${prod.vendido}* pzas ($${(prod.vendido * prod.precio).toFixed(2)})\n`;
-            }
-          }
+        // Seleccionar formato de envío
+        const { value: format } = await Swal.fire({
+          title: "Formato de WhatsApp",
+          text: "¿Cómo deseas compartir el ticket?",
+          icon: "question",
+          input: "radio",
+          inputOptions: {
+            text: "💬 Mensaje de Texto (Directo)",
+            pdf: "📄 Documento PDF (Descargar + Abrir Chat)",
+            image: "🖼️ Imagen PNG (Descargar + Abrir Chat)"
+          },
+          inputValue: "text",
+          confirmButtonText: "Siguiente",
+          showCancelButton: true,
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: "#3A86FF",
+          cancelButtonColor: "#6c757d"
         });
-        
-        message += `\n*Totales:*\n`;
-        if (tipoOperacion === "surtido") {
-          message += `- Piezas Entregadas: *${totals.totalPcsEntregadas}*\n`;
-          message += `- Valor total en Consignación: *$${totals.totalValorInventarioDejado.toFixed(2)}*\n`;
-        } else {
-          message += `- Piezas Vendidas: *${ticketData.totales.totalPiezas}*\n`;
-          message += `- Venta Bruta: *$${ticketData.totales.totalMontoVendido.toFixed(2)}*\n`;
-          message += `- Comisión Tienda (${ticketData.comisionPct}%): *-$${ticketData.totales.totalComision.toFixed(2)}*\n`;
-          message += `- *TOTAL NETO A COBRAR:* *$${ticketData.totales.totalCobrar.toFixed(2)}*\n`;
-          message += `- Valor Inventario Restante: *$${totals.totalValorInventarioDejado.toFixed(2)}*\n`;
-        }
 
-        if (ticketData.comentarios) {
-          message += `\n*Comentarios:* ${ticketData.comentarios}\n`;
-        }
-        
-        message += `\n¡Gracias por su preferencia!`;
+        if (!format) return; // Si cancela
 
         let phone = tienda.telefono ? tienda.telefono.replace(/[^0-9]/g, "") : "";
         const { value: inputPhone } = await Swal.fire({
@@ -316,12 +284,53 @@ export default function Visitas() {
           if (finalPhone.length === 10) {
             finalPhone = "52" + finalPhone;
           }
-          const encodedText = encodeURIComponent(message);
-          window.open(`https://wa.me/${finalPhone}?text=${encodedText}`, "_blank");
-        }
-      } else {
-        if (printWindow) {
-          printWindow.close();
+
+          if (format === "text") {
+            // Construir mensaje legible para WhatsApp (Texto)
+            let message = `*EasyTech Supply* 🛒\n`;
+            message += `*${tipoOperacion === "surtido" ? "NOTA DE SURTIDO / NUEVO CLIENTE" : "TICKET DE CORTE Y COBRO"}*\n\n`;
+            message += `*Folio:* ${ticketData.folio}\n`;
+            message += `*Fecha:* ${new Date(ticketData.fecha).toLocaleDateString("es-MX")} ${new Date(ticketData.fecha).toLocaleTimeString("es-MX", {hour: '2-digit', minute:'2-digit'})}\n`;
+            message += `*Tienda:* ${ticketData.tienda}\n`;
+            message += `*Encargado:* ${ticketData.encargado}\n\n`;
+            
+            message += `*Detalle de Productos:*\n`;
+            ticketData.productos.forEach(prod => {
+              if (tipoOperacion === "surtido") {
+                if (prod.reab > 0) {
+                  message += `- *${prod.nombre}*:\n  Surtido: *+${prod.reab}* pzas (Queda en exhibidor: ${prod.dejado})\n`;
+                }
+              } else {
+                if (prod.vendido > 0 || prod.reab > 0 || prod.inicial > 0) {
+                  message += `- *${prod.nombre}*:\n  Inicial: ${prod.inicial} | Físico: ${prod.fisico} | Surtido: +${prod.reab} | Queda: *${prod.dejado}* | Vendido: *${prod.vendido}* pzas ($${(prod.vendido * prod.precio).toFixed(2)})\n`;
+                }
+              }
+            });
+            
+            message += `\n*Totales:*\n`;
+            if (tipoOperacion === "surtido") {
+              message += `- Piezas Entregadas: *${totals.totalPcsEntregadas}*\n`;
+              message += `- Valor total en Consignación: *$${totals.totalValorInventarioDejado.toFixed(2)}*\n`;
+            } else {
+              message += `- Piezas Vendidas: *${ticketData.totales.totalPiezas}*\n`;
+              message += `- Venta Bruta: *$${ticketData.totales.totalMontoVendido.toFixed(2)}*\n`;
+              message += `- Comisión Tienda (${ticketData.comisionPct}%): *-$${ticketData.totales.totalComision.toFixed(2)}*\n`;
+              message += `- *TOTAL NETO A COBRAR:* *$${ticketData.totales.totalCobrar.toFixed(2)}*\n`;
+              message += `- Valor Inventario Restante: *$${totals.totalValorInventarioDejado.toFixed(2)}*\n`;
+            }
+
+            if (ticketData.comentarios) {
+              message += `\n*Comentarios:* ${ticketData.comentarios}\n`;
+            }
+            
+            message += `\n¡Gracias por su preferencia!`;
+
+            const encodedText = encodeURIComponent(message);
+            window.open(`https://wa.me/${finalPhone}?text=${encodedText}`, "_blank");
+          } else {
+            // Formatos PDF o Imagen (redirección)
+            window.open(`/templates/ticket.html?source=app&download=${format}&phone=${finalPhone}`, "_blank");
+          }
         }
       }
       
@@ -331,9 +340,6 @@ export default function Visitas() {
       setFolio(`ETC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
       setMobileTab("conteo"); // Restablecer pestaña
     } catch (err) {
-      if (printWindow) {
-        printWindow.close();
-      }
       console.error(err);
       Swal.fire({
         title: "Error",

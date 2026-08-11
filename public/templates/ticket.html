@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Easy Tech Consignaciones - Ticket de Operación</title>
+  <!-- Librerías de Exportación -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     /* VARIABLES DE DISEÑO (Paleta Azul Marino Premium de Easy Tech) */
     :root {
@@ -354,6 +357,54 @@
       margin: 0 auto 5px auto;
     }
 
+    /* TOOLBAR PARA LA APP */
+    .app-toolbar {
+      display: none; /* Oculto por defecto en el simulador */
+      background-color: var(--color-primary);
+      padding: 12px;
+      position: sticky;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .app-toolbar .toolbar-btn {
+      background-color: var(--color-primary-light);
+      color: var(--color-white);
+      border: 1px solid rgba(100, 255, 218, 0.3);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+      font-family: var(--font-family);
+    }
+
+    .app-toolbar .toolbar-btn:hover {
+      background-color: var(--color-accent);
+      color: var(--color-primary);
+      border-color: var(--color-accent);
+      transform: translateY(-1px);
+    }
+
+    .app-toolbar .toolbar-btn.btn-primary-action {
+      background-color: var(--color-accent-blue);
+      border-color: var(--color-accent-blue);
+    }
+    
+    .app-toolbar .toolbar-btn.btn-primary-action:hover {
+      background-color: #2563EB;
+      color: var(--color-white);
+    }
+
     /* ESTILOS DE IMPRESIÓN EXCLUSIVOS */
     @media print {
       body {
@@ -366,6 +417,7 @@
       .control-panel, 
       .paper-size-selector, 
       .btn,
+      .app-toolbar,
       .simulator-container {
         display: none !important;
       }
@@ -384,6 +436,15 @@
   </style>
 </head>
 <body>
+
+  <!-- BARRA DE ACCIÓN PARA LA APP -->
+  <div id="app-toolbar" class="app-toolbar">
+    <button class="toolbar-btn btn-primary-action" onclick="window.print()">🖨️ Imprimir Ticket</button>
+    <button class="toolbar-btn" onclick="downloadPDF()">📄 Descargar PDF</button>
+    <button class="toolbar-btn" onclick="downloadImage()">🖼️ Descargar Imagen</button>
+    <button class="toolbar-btn" onclick="sendWhatsApp()">💬 Enviar WhatsApp (Texto)</button>
+    <button class="toolbar-btn" onclick="window.close()" style="background-color: #6c757d; border-color: #3f474f;">❌ Cerrar</button>
+  </div>
 
   <div class="simulator-container">
     
@@ -716,10 +777,27 @@
             `;
           }
 
-          // Lanzar la impresión nativa automáticamente
-          setTimeout(() => {
-            window.print();
-          }, 500);
+          // Mostrar barra de herramientas para la app
+          document.getElementById('app-toolbar').style.display = 'flex';
+
+          // Manejar descarga automática si viene parametrizada
+          const downloadParam = params.get("download");
+          const phoneParam = params.get("phone");
+
+          if (downloadParam === "pdf") {
+            setTimeout(() => {
+              downloadPDF(phoneParam);
+            }, 1000);
+          } else if (downloadParam === "image") {
+            setTimeout(() => {
+              downloadImage(phoneParam);
+            }, 1000);
+          } else {
+            // Lanzar la impresión nativa automáticamente
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          }
         }
       } else {
         // Modo simulador normal
@@ -925,6 +1003,134 @@
         container.classList.add('size-58');
       } else {
         container.classList.remove('size-58');
+      }
+    }
+
+    // EXPORTACIÓN A PDF
+    function downloadPDF(phone = null) {
+      const element = document.getElementById('ticket-container');
+      const folio = document.getElementById('t-folio').textContent || 'ticket';
+
+      // Configurar html2canvas para máxima resolución
+      html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Calcular dimensiones exactas del PDF
+        const imgWidthMm = element.classList.contains('size-58') ? 58 : 80;
+        const imgHeightMm = (canvas.height * (imgWidthMm / canvas.width));
+        
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: [imgWidthMm, imgHeightMm + 8] // agregamos un pequeño margen inferior
+        });
+        
+        pdf.addImage(imgData, 'PNG', 0, 4, imgWidthMm, imgHeightMm);
+        pdf.save(`ticket_${folio}.pdf`);
+        
+        if (phone) {
+          setTimeout(() => {
+            window.location.href = `https://wa.me/${phone}`;
+          }, 1200);
+        }
+      }).catch(err => {
+        console.error("Error al generar el PDF:", err);
+        if (phone) {
+          window.location.href = `https://wa.me/${phone}`;
+        }
+      });
+    }
+
+    // EXPORTACIÓN A IMAGEN
+    function downloadImage(phone = null) {
+      const element = document.getElementById('ticket-container');
+      const folio = document.getElementById('t-folio').textContent || 'ticket';
+
+      html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `ticket_${folio}.png`;
+        link.href = imgData;
+        link.click();
+        
+        if (phone) {
+          setTimeout(() => {
+            window.location.href = `https://wa.me/${phone}`;
+          }, 1200);
+        }
+      }).catch(err => {
+        console.error("Error al generar la imagen:", err);
+        if (phone) {
+          window.location.href = `https://wa.me/${phone}`;
+        }
+      });
+    }
+
+    // ENVIAR WHATSAPP (TEXTO) DESDE EL PROPIO TICKET
+    function sendWhatsApp() {
+      const storedData = localStorage.getItem("print_ticket_data");
+      if (!storedData) {
+        alert("No se encontraron datos del ticket.");
+        return;
+      }
+      const data = JSON.parse(storedData);
+      
+      let phone = data.telefono ? data.telefono.replace(/[^0-9]/g, "") : "";
+      const inputPhone = window.prompt("Confirma o ingresa el número de teléfono (con código de país, ej. 524441234567):", phone);
+      
+      if (inputPhone) {
+        let finalPhone = inputPhone.replace(/[^0-9]/g, "");
+        if (finalPhone.length === 10) {
+          finalPhone = "52" + finalPhone;
+        }
+
+        // Construir mensaje legible para WhatsApp (Texto)
+        let message = `*EasyTech Supply* 🛒\n`;
+        message += `*${data.tipoOperacion === "surtido" ? "NOTA DE SURTIDO / NUEVO CLIENTE" : "TICKET DE CORTE Y COBRO"}*\n\n`;
+        message += `*Folio:* ${data.folio}\n`;
+        
+        const dateObj = new Date(data.fecha);
+        message += `*Fecha:* ${dateObj.toLocaleDateString("es-MX")} ${dateObj.toLocaleTimeString("es-MX", {hour: '2-digit', minute:'2-digit'})}\n`;
+        message += `*Tienda:* ${data.tienda}\n`;
+        message += `*Encargado:* ${data.encargado}\n\n`;
+        
+        message += `*Detalle de Productos:*\n`;
+        data.productos.forEach(prod => {
+          if (data.tipoOperacion === "surtido") {
+            if (prod.reab > 0) {
+              message += `- *${prod.nombre}*:\n  Surtido: *+${prod.reab}* pzas (Queda en exhibidor: ${prod.dejado})\n`;
+            }
+          } else {
+            if (prod.vendido > 0 || prod.reab > 0 || prod.inicial > 0) {
+              message += `- *${prod.nombre}*:\n  Inicial: ${prod.inicial} | Físico: ${prod.fisico} | Surtido: +${prod.reab} | Queda: *${prod.dejado}* | Vendido: *${prod.vendido}* pzas ($${(prod.vendido * prod.precio).toFixed(2)})\n`;
+            }
+          }
+        });
+        
+        message += `\n*Totales:*\n`;
+        if (data.tipoOperacion === "surtido") {
+          const totalPcsEntregadas = data.productos.reduce((acc, p) => acc + p.reab, 0);
+          const totalValorInventarioDejado = data.totales.totalValorInventarioDejado || 0;
+          message += `- Piezas Entregadas: *${totalPcsEntregadas}*\n`;
+          message += `- Valor total en Consignación: *$${totalValorInventarioDejado.toFixed(2)}*\n`;
+        } else {
+          message += `- Piezas Vendidas: *${data.totales.totalPiezas}*\n`;
+          message += `- Venta Bruta: *$${data.totales.totalMontoVendido.toFixed(2)}*\n`;
+          message += `- Comisión Tienda (${data.comisionPct}%): *-$${data.totales.totalComision.toFixed(2)}*\n`;
+          message += `- *TOTAL NETO A COBRAR:* *$${data.totales.totalCobrar.toFixed(2)}*\n`;
+          const totalValorInventarioDejado = data.totales.totalValorInventarioDejado || 0;
+          message += `- Valor Inventario Restante: *$${totalValorInventarioDejado.toFixed(2)}*\n`;
+        }
+
+        if (data.comentarios) {
+          message += `\n*Comentarios:* ${data.comentarios}\n`;
+        }
+        
+        message += `\n¡Gracias por su preferencia!`;
+
+        const encodedText = encodeURIComponent(message);
+        window.open(`https://wa.me/${finalPhone}?text=${encodedText}`, "_blank");
       }
     }
 
