@@ -1,20 +1,5 @@
 {
   "firestore": {
     "rules": "firestore.rules"
-  },
-  "hosting": {
-    "site": "etsupply",
-    "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
   }
 }
