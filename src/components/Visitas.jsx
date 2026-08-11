@@ -237,7 +237,11 @@ export default function Visitas() {
       });
 
       if (actionResult.isConfirmed) {
-        window.open("/templates/ticket.html?source=app", "_blank");
+        const ticketUrl = "/templates/ticket.html?source=app";
+        const newWin = window.open(ticketUrl, "_blank");
+        if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+          window.location.href = ticketUrl;
+        }
       } else if (actionResult.isDenied) {
         // Seleccionar formato de envío
         const { value: format } = await Swal.fire({
@@ -326,10 +330,18 @@ export default function Visitas() {
             message += `\n¡Gracias por su preferencia!`;
 
             const encodedText = encodeURIComponent(message);
-            window.open(`https://wa.me/${finalPhone}?text=${encodedText}`, "_blank");
+            const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodedText}`;
+            const newWin = window.open(whatsappUrl, "_blank");
+            if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+              window.location.href = whatsappUrl;
+            }
           } else {
             // Formatos PDF o Imagen (redirección)
-            window.open(`/templates/ticket.html?source=app&download=${format}&phone=${finalPhone}`, "_blank");
+            const ticketUrl = `/templates/ticket.html?source=app&download=${format}&phone=${finalPhone}`;
+            const newWin = window.open(ticketUrl, "_blank");
+            if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+              window.location.href = ticketUrl;
+            }
           }
         }
       }

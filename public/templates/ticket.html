@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Easy Tech Consignaciones - Ticket de Operación</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Librerías de Exportación -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -405,6 +407,46 @@
       color: var(--color-white);
     }
 
+    /* ANIMACIONES Y DISEÑO RESPONSIVO MÓVIL */
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.6); }
+      70% { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(37, 211, 102, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+
+    .pulse-animation {
+      animation: pulse 2.0s infinite !important;
+    }
+
+    @media (max-width: 768px) {
+      .simulator-container {
+        flex-direction: column;
+        padding: 10px;
+        gap: 15px;
+      }
+      .control-panel {
+        max-width: 100%;
+        max-height: none;
+      }
+      .preview-panel {
+        max-height: none;
+      }
+      .app-toolbar {
+        padding: 8px;
+        gap: 8px;
+      }
+      .app-toolbar .toolbar-btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        flex: 1 1 40%; /* Dos botones por fila aproximadamente */
+        justify-content: center;
+      }
+      .app-toolbar .toolbar-btn.btn-primary-action,
+      .app-toolbar .toolbar-btn:last-child {
+        flex: 1 1 90%; /* Ancho completo para botones clave */
+      }
+    }
+
     /* ESTILOS DE IMPRESIÓN EXCLUSIVOS */
     @media print {
       body {
@@ -414,12 +456,24 @@
         min-height: auto;
       }
 
+      /* Ocultar barra y controles */
       .control-panel, 
       .paper-size-selector, 
       .btn,
-      .app-toolbar,
-      .simulator-container {
+      .app-toolbar {
         display: none !important;
+      }
+
+      /* No ocultar el simulador, solo quitar estilos de flex y caja */
+      .simulator-container,
+      .preview-panel {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        background: none !important;
       }
 
       .ticket-view {
@@ -427,6 +481,8 @@
         padding: 0 !important;
         margin: 0 auto !important;
         background-color: transparent !important;
+        width: 100% !important;
+        max-width: 80mm;
       }
 
       @page {
@@ -440,10 +496,10 @@
   <!-- BARRA DE ACCIÓN PARA LA APP -->
   <div id="app-toolbar" class="app-toolbar">
     <button class="toolbar-btn btn-primary-action" onclick="window.print()">🖨️ Imprimir Ticket</button>
-    <button class="toolbar-btn" onclick="downloadPDF()">📄 Descargar PDF</button>
-    <button class="toolbar-btn" onclick="downloadImage()">🖼️ Descargar Imagen</button>
+    <button id="btn-share-pdf" class="toolbar-btn" onclick="downloadPDF()">📄 Descargar PDF</button>
+    <button id="btn-share-image" class="toolbar-btn" onclick="downloadImage()">🖼️ Descargar Imagen</button>
     <button class="toolbar-btn" onclick="sendWhatsApp()">💬 Enviar WhatsApp (Texto)</button>
-    <button class="toolbar-btn" onclick="window.close()" style="background-color: #6c757d; border-color: #3f474f;">❌ Cerrar</button>
+    <button class="toolbar-btn" onclick="closeTicket()" style="background-color: #6c757d; border-color: #3f474f;">❌ Cerrar / Volver</button>
   </div>
 
   <div class="simulator-container">
@@ -784,14 +840,37 @@
           const downloadParam = params.get("download");
           const phoneParam = params.get("phone");
 
+          const canShare = !!(navigator.canShare && navigator.share);
+
           if (downloadParam === "pdf") {
-            setTimeout(() => {
-              downloadPDF(phoneParam);
-            }, 1000);
+            const btnPdf = document.getElementById('btn-share-pdf');
+            if (btnPdf) {
+              btnPdf.textContent = "🚀 Enviar PDF (WhatsApp)";
+              btnPdf.style.backgroundColor = "#25D366";
+              btnPdf.style.borderColor = "#25D366";
+              btnPdf.style.color = "#FFFFFF";
+              btnPdf.classList.add('pulse-animation');
+            }
+            // Solo auto-descargar si no se puede compartir (ej. Computadoras sin Web Share API)
+            if (!canShare) {
+              setTimeout(() => {
+                downloadPDF(phoneParam);
+              }, 1000);
+            }
           } else if (downloadParam === "image") {
-            setTimeout(() => {
-              downloadImage(phoneParam);
-            }, 1000);
+            const btnImg = document.getElementById('btn-share-image');
+            if (btnImg) {
+              btnImg.textContent = "🚀 Enviar Imagen (WhatsApp)";
+              btnImg.style.backgroundColor = "#25D366";
+              btnImg.style.borderColor = "#25D366";
+              btnImg.style.color = "#FFFFFF";
+              btnImg.classList.add('pulse-animation');
+            }
+            if (!canShare) {
+              setTimeout(() => {
+                downloadImage(phoneParam);
+              }, 1000);
+            }
           } else {
             // Lanzar la impresión nativa automáticamente
             setTimeout(() => {
@@ -1006,13 +1085,69 @@
       }
     }
 
+    // COMPARTIR O DESCARGAR ARCHIVO (Web Share API con Fallback)
+    function shareOrDownloadFile(file, fallbackFn) {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          files: [file],
+          title: file.name,
+          text: 'Ticket de Operación EasyTech Supply'
+        })
+        .then(() => {
+          console.log("Archivo compartido con éxito.");
+          // Si hay número de teléfono en la URL, podemos redirigir a un chat directo
+          const params = new URLSearchParams(window.location.search);
+          const phone = params.get("phone");
+          if (phone) {
+            let cleanPhone = phone.replace(/[^0-9]/g, "");
+            setTimeout(() => {
+              window.location.href = `https://wa.me/${cleanPhone}`;
+            }, 1000);
+          }
+        })
+        .catch(err => {
+          console.error("Error al compartir:", err);
+          // Si el usuario canceló el diálogo de compartir (AbortError), no hacemos fallback.
+          // Para otros errores, intentamos el fallback.
+          if (err.name !== 'AbortError') {
+            fallbackFn();
+          }
+        });
+      } else {
+        fallbackFn();
+      }
+    }
+
+    // CERRAR O VOLVER
+    function closeTicket() {
+      if (window.opener) {
+        window.close();
+      } else if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "/";
+      }
+    }
+
     // EXPORTACIÓN A PDF
     function downloadPDF(phone = null) {
       const element = document.getElementById('ticket-container');
       const folio = document.getElementById('t-folio').textContent || 'ticket';
+      
+      // Mostrar feedback visual
+      const btnPdf = document.getElementById('btn-share-pdf');
+      const originalText = btnPdf ? btnPdf.textContent : "";
+      if (btnPdf) btnPdf.textContent = "⏳ Generando PDF...";
 
-      // Configurar html2canvas para máxima resolución
-      html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+      // html2canvas con optimizaciones para móvil
+      html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#FFFFFF',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         
         // Calcular dimensiones exactas del PDF
@@ -1027,15 +1162,27 @@
         });
         
         pdf.addImage(imgData, 'PNG', 0, 4, imgWidthMm, imgHeightMm);
-        pdf.save(`ticket_${folio}.pdf`);
         
-        if (phone) {
-          setTimeout(() => {
-            window.location.href = `https://wa.me/${phone}`;
-          }, 1200);
-        }
+        const filename = `ticket_${folio}.pdf`;
+        const pdfBlob = pdf.output('blob');
+        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+        if (btnPdf) btnPdf.textContent = originalText;
+
+        const fallbackFn = () => {
+          pdf.save(filename);
+          if (phone) {
+            setTimeout(() => {
+              window.location.href = `https://wa.me/${phone}`;
+            }, 1200);
+          }
+        };
+
+        shareOrDownloadFile(file, fallbackFn);
+
       }).catch(err => {
         console.error("Error al generar el PDF:", err);
+        if (btnPdf) btnPdf.textContent = originalText;
         if (phone) {
           window.location.href = `https://wa.me/${phone}`;
         }
@@ -1046,21 +1193,46 @@
     function downloadImage(phone = null) {
       const element = document.getElementById('ticket-container');
       const folio = document.getElementById('t-folio').textContent || 'ticket';
+      
+      // Mostrar feedback visual
+      const btnImg = document.getElementById('btn-share-image');
+      const originalText = btnImg ? btnImg.textContent : "";
+      if (btnImg) btnImg.textContent = "⏳ Generando Imagen...";
 
-      html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = `ticket_${folio}.png`;
-        link.href = imgData;
-        link.click();
-        
-        if (phone) {
-          setTimeout(() => {
-            window.location.href = `https://wa.me/${phone}`;
-          }, 1200);
-        }
+      html2canvas(element, { 
+        scale: 2, 
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#FFFFFF',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      }).then(canvas => {
+        canvas.toBlob(blob => {
+          if (btnImg) btnImg.textContent = originalText;
+          if (!blob) return;
+
+          const filename = `ticket_${folio}.png`;
+          const file = new File([blob], filename, { type: 'image/png' });
+
+          const fallbackFn = () => {
+            const imgData = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = imgData;
+            link.click();
+            
+            if (phone) {
+              setTimeout(() => {
+                window.location.href = `https://wa.me/${phone}`;
+              }, 1200);
+            }
+          };
+
+          shareOrDownloadFile(file, fallbackFn);
+        }, 'image/png');
       }).catch(err => {
         console.error("Error al generar la imagen:", err);
+        if (btnImg) btnImg.textContent = originalText;
         if (phone) {
           window.location.href = `https://wa.me/${phone}`;
         }
@@ -1130,7 +1302,11 @@
         message += `\n¡Gracias por su preferencia!`;
 
         const encodedText = encodeURIComponent(message);
-        window.open(`https://wa.me/${finalPhone}?text=${encodedText}`, "_blank");
+        const whatsappUrl = `https://wa.me/${finalPhone}?text=${encodedText}`;
+        const newWin = window.open(whatsappUrl, "_blank");
+        if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+          window.location.href = whatsappUrl;
+        }
       }
     }
 
