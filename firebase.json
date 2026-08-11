@@ -3,7 +3,7 @@
     "rules": "firestore.rules"
   },
   "hosting": {
-    "site": "etsupply",
+    "site": "easy-tech-supply",
     "public": "dist",
     "ignore": [
       "firebase.json",
