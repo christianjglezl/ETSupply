@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { seedDatabase } from "../firebase/seed";
+import Reportes from "./Reportes";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [isDbEmpty, setIsDbEmpty] = useState(false);
   const [seedingLoading, setSeedingLoading] = useState(false);
   const [seedingMessage, setSeedingMessage] = useState("");
+  const [showReporte, setShowReporte] = useState(false);
 
   useEffect(() => {
     // Escuchar Tiendas
@@ -100,6 +102,15 @@ export default function Dashboard() {
         <div className="header-title">
           <h1>Dashboard Analítico</h1>
           <p>Easy Tech Consignaciones - Resumen operacional de ganchos y exhibidores</p>
+        </div>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => setShowReporte(true)}
+            style={{ fontSize: "0.9rem" }}
+          >
+            📈 Reporte de Ventas
+          </button>
         </div>
       </div>
 
@@ -247,6 +258,16 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* MODAL DE REPORTES */}
+      {showReporte && (
+        <Reportes
+          productos={productos}
+          tiendas={tiendas}
+          visitas={visitas}
+          onClose={() => setShowReporte(false)}
+        />
+      )}
     </div>
   );
 }

@@ -205,6 +205,25 @@ export default function Productos() {
         return;
       }
 
+      // Verificar si hay códigos con formato científico de Excel (ej: 7.5053E+12)
+      const scientificSkus = validRows.filter(r => r.sku && /[0-9]+\.?[0-9]*[eE]\+[0-9]+/.test(r.sku));
+      if (scientificSkus.length > 0) {
+        const confirmScientific = await Swal.fire({
+          title: "⚠️ Advertencia de formato en Excel",
+          text: `Se detectaron ${scientificSkus.length} códigos en notación científica (ejemplo: "${scientificSkus[0].sku}"). Esto sucede cuando Excel abre el archivo y convierte los números largos. Se recomienda formatear la columna de SKU como 'Texto' en Excel antes de exportar. ¿Deseas continuar de todas formas?`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#f59e0b",
+          cancelButtonColor: "#3A86FF",
+          confirmButtonText: "Sí, continuar",
+          cancelButtonText: "Cancelar y corregir"
+        });
+        if (!confirmScientific.isConfirmed) {
+          e.target.value = "";
+          return;
+        }
+      }
+
       const proceedWithImport = async () => {
         Swal.fire({
           title: "Procesando importación...",
