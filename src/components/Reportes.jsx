@@ -65,21 +65,17 @@ export default function Reportes({ productos, tiendas, visitas, onClose }) {
     return { porProducto, porTienda };
   }, [visitas]);
 
-  // ── Sección 1: Faltante en Inventario Central ──
+  // ── Sección 1: Sugerencia de Resurtido al Almacén Central ──
   const faltanteData = useMemo(() => {
     const rows = [];
     Object.entries(analytics.porProducto).forEach(([prodId, data]) => {
-      if (data.totalVendido === 0 && data.totalResurtido === 0) return;
+      // Solo mostrar productos que realmente se vendieron
+      if (data.totalVendido === 0) return;
 
       const prod = productos.find(p => p.id === prodId);
       const stockCentral = prod ? prod.stockAlmacen : 0;
       const costo = prod ? prod.costo : 0;
-
-      // "Salidas netas del almacén" = lo que se resurtió a tiendas
-      // El usuario quiere ver cuánto necesita reponer
-      // Si vendió X y resurtió Y a tiendas, entonces Y piezas salieron del almacén
-      const salidaAlmacen = data.totalResurtido;
-      const costoReposicion = salidaAlmacen * costo;
+      const costoResurtir = data.totalVendido * costo;
 
       rows.push({
         prodId,
@@ -88,14 +84,13 @@ export default function Reportes({ productos, tiendas, visitas, onClose }) {
         totalVendido: data.totalVendido,
         totalResurtido: data.totalResurtido,
         stockCentral,
-        salidaAlmacen,
         costo,
-        costoReposicion
+        costoResurtir
       });
     });
 
-    // Ordenar por mayor cantidad resurtida (más salidas del almacén)
-    rows.sort((a, b) => b.salidaAlmacen - a.salidaAlmacen);
+    // Ordenar por mayor cantidad vendida (lo más urgente a resurtir primero)
+    rows.sort((a, b) => b.totalVendido - a.totalVendido);
     return rows;
   }, [analytics.porProducto, productos]);
 
@@ -239,9 +234,9 @@ export default function Reportes({ productos, tiendas, visitas, onClose }) {
 
   const exportFaltante = () => {
     exportCSV(
-      "reporte_faltante_inventario.csv",
-      ["Producto", "Categoría", "Total Vendido", "Total Resurtido a Tiendas", "Stock Central Actual", "Costo Unitario", "Costo Reposición"],
-      faltanteData.map(r => [r.nombre, r.categoria, r.totalVendido, r.totalResurtido, r.stockCentral, r.costo.toFixed(2), r.costoReposicion.toFixed(2)])
+      "lista_resurtido_sugerido.csv",
+      ["Producto", "Categoría", "Sugerido Resurtir (pzas)", "Ya Resurtido a Tiendas", "Stock Central Actual", "Costo Unitario", "Costo Total Resurtido"],
+      faltanteData.map(r => [r.nombre, r.categoria, r.totalVendido, r.totalResurtido, r.stockCentral, r.costo.toFixed(2), r.costoResurtir.toFixed(2)])
     );
   };
 
@@ -273,7 +268,7 @@ export default function Reportes({ productos, tiendas, visitas, onClose }) {
   const maxUtilidad = rentabilidad.length > 0 ? Math.max(...rentabilidad.map(r => Math.abs(r.utilidad))) : 1;
 
   const sections = [
-    { key: "faltante", label: "🔴 Faltante Inventario", shortLabel: "🔴 Faltante" },
+    { key: "faltante", label: "🛒 Resurtido Sugerido", shortLabel: "🛒 Resurtir" },
     { key: "vendidos", label: "🏆 Más Vendidos", shortLabel: "🏆 Top" },
     { key: "rentabilidad", label: "💰 Rentabilidad", shortLabel: "💰 Rentab." },
     { key: "tiendas", label: "🏪 Por Tienda", shortLabel: "🏪 Tiendas" },
@@ -312,70 +307,65 @@ export default function Reportes({ productos, tiendas, visitas, onClose }) {
         {/* CONTENT */}
         <div className="report-content">
 
-          {/* ═══ FALTANTE INVENTARIO ═══ */}
+          {/* ═══ LISTA DE RESURTIDO SUGERIDA ═══ */}
           {activeSection === "faltante" && (
             <div className="report-section">
               <div className="report-section-header">
                 <div>
-                  <h3>Faltante en Inventario Central</h3>
-                  <p>Productos que se han resurtido a tiendas y necesitan reponerse en tu almacén.</p>
+                  <h3>🛒 Lista de Resurtido Sugerida</h3>
+                  <p>Productos que se vendieron y deberías considerar resurtir en tu almacén central. La cantidad sugerida es igual a lo vendido.</p>
                 </div>
                 <button className="btn btn-secondary" onClick={exportFaltante} style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}>📥 Exportar CSV</button>
               </div>
 
               {faltanteData.length === 0 ? (
                 <div className="report-empty">
-                  <span style={{ fontSize: "2rem" }}>📦</span>
-                  <p>No se han registrado ventas ni resurtidos aún.</p>
+                  <span style={{ fontSize: "2rem" }}>✅</span>
+                  <p>No hay productos vendidos aún. Cuando registres cortes con ventas, aquí aparecerá tu lista de resurtido.</p>
                 </div>
               ) : (
                 <>
-                  {/* Resumen rápido */}
+                  {/* Resumen de inversión */}
                   <div className="report-summary-row">
                     <div className="report-summary-card" style={{ borderLeft: "4px solid var(--color-danger)" }}>
-                      <span className="report-summary-value">{faltanteData.reduce((a, r) => a + r.totalResurtido, 0)} pzas</span>
-                      <span className="report-summary-label">Total Resurtido a Tiendas</span>
+                      <span className="report-summary-value">{faltanteData.reduce((a, r) => a + r.totalVendido, 0)} pzas</span>
+                      <span className="report-summary-label">Total Piezas a Resurtir</span>
                     </div>
                     <div className="report-summary-card" style={{ borderLeft: "4px solid var(--color-warning)" }}>
-                      <span className="report-summary-value">${faltanteData.reduce((a, r) => a + r.costoReposicion, 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}</span>
-                      <span className="report-summary-label">Costo de Reposición</span>
+                      <span className="report-summary-value">${faltanteData.reduce((a, r) => a + r.costoResurtir, 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}</span>
+                      <span className="report-summary-label">Inversión Estimada para Resurtir</span>
                     </div>
-                    <div className="report-summary-card" style={{ borderLeft: "4px solid var(--color-accent-blue)" }}>
-                      <span className="report-summary-value">{faltanteData.reduce((a, r) => a + r.totalVendido, 0)} pzas</span>
-                      <span className="report-summary-label">Total Vendido Acumulado</span>
+                    <div className="report-summary-card" style={{ borderLeft: "4px solid var(--color-success)" }}>
+                      <span className="report-summary-value">{faltanteData.length}</span>
+                      <span className="report-summary-label">Productos Diferentes</span>
                     </div>
                   </div>
 
-                  <div className="table-container">
-                    <table className="custom-table">
-                      <thead>
-                        <tr>
-                          <th>Producto</th>
-                          <th style={{ textAlign: "center" }}>Vendidos</th>
-                          <th style={{ textAlign: "center" }}>Resurtido a Tiendas</th>
-                          <th style={{ textAlign: "center" }}>Stock Central</th>
-                          <th style={{ textAlign: "right" }}>Costo Reposición</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {faltanteData.map(row => (
-                          <tr key={row.prodId}>
-                            <td data-label="Producto">
-                              <div><strong>{row.nombre}</strong></div>
-                              <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{row.categoria}</div>
-                            </td>
-                            <td data-label="Vendidos" style={{ textAlign: "center", fontWeight: "bold" }}>{row.totalVendido}</td>
-                            <td data-label="Resurtido" style={{ textAlign: "center", color: "var(--color-warning)", fontWeight: "bold" }}>{row.totalResurtido}</td>
-                            <td data-label="Stock Central" style={{ textAlign: "center", fontWeight: "bold", color: row.stockCentral < 3 ? "var(--color-danger)" : "inherit" }}>
-                              {row.stockCentral} pzas
-                            </td>
-                            <td data-label="Costo Repos." style={{ textAlign: "right", fontWeight: "bold" }}>
-                              ${row.costoReposicion.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  {/* Lista estilo shopping list */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {faltanteData.map(row => (
+                      <div key={row.prodId} className="report-rank-item" style={{ padding: "12px 16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: "50px", height: "50px", borderRadius: "var(--radius-sm)", backgroundColor: "rgba(244, 67, 54, 0.1)", color: "var(--color-danger)", fontWeight: "800", fontSize: "1.2rem", flexShrink: 0 }}>
+                          {row.totalVendido}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                            <strong style={{ fontSize: "0.9rem" }}>{row.nombre}</strong>
+                            <span className="badge badge-info">{row.categoria}</span>
+                          </div>
+                          <div style={{ display: "flex", gap: "16px", fontSize: "0.78rem", color: "var(--color-text-muted)", marginTop: "4px", flexWrap: "wrap" }}>
+                            <span>Costo c/u: <strong>${row.costo.toFixed(2)}</strong></span>
+                            <span>Subtotal: <strong style={{ color: "var(--color-warning)" }}>${row.costoResurtir.toFixed(2)}</strong></span>
+                            <span>Stock central: <strong style={{ color: row.stockCentral < 3 ? "var(--color-danger)" : "inherit" }}>{row.stockCentral} pzas</strong></span>
+                            {row.totalResurtido > 0 && <span>Ya resurtido a tiendas: <strong>{row.totalResurtido} pzas</strong></span>}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 600 }}>Resurtir</div>
+                          <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--color-danger)" }}>{row.totalVendido} pzas</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </>
               )}
